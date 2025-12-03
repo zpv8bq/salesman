@@ -94,8 +94,9 @@ def make_plot(infile,optfile=None,region="NA"):
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
 
-    # Save as SVG (equivalent to gnuplot set terminal svg)
-    plt.savefig("cities150.pdf", format='pdf', facecolor='white')
+    # Save plot
+    plotfile=infile.split('.')[0]+'.pdf'
+    plt.savefig(plotfile, format='pdf', facecolor='white')
 
     print('close plot or "^C" to exit')
     try:
