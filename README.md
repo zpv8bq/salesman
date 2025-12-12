@@ -1,16 +1,6 @@
-Starter code and data for traveling salesman problem
+- To use the TSP solver execute python3 tsp_solver.py <input_file> where input_file is one of the provided cities__.dat. This program will output the annealing schedule and the best_route in a new file called cities##_solution.dat, which is then run by the routeplot, such as python3 routeplot.py <cities##_solution.dat>, which plots the best_route on the map in a PDF. 
 
+-cities150 <337080.86 km> <48393.71 km> <164.89 seconds>
+-cities1k <2789864.85 km> <112350.75 km> <1751.28 seconds>
 
-Files in this directory:
-
-* datareader.cpp : example code to read in the data files (use Makefile)
-* datareader.py  : example code to read in the data files
-* cities23.dat : list of coordinates for 23 cities in North America
-* cities150.dat : 150 cities in North America
-* cities1k.dat : 1207 cities in North America
-* cities2k.dat : 2063 cities around the world
-* routeplot.py : code to plot the globe and salesman's path<br>
-usage:<br>
-python routeplot.py cities.dat [cities2.dat] -r [="NA"],"World"'<br>
-NA = North America, World = Mercator projection of the whole earth
-* earth.C : (just for fun) plotting the globe in ROOT
+The tsp_solver.py program uses two methods. One is the reverse segment, which selects two random positions in the route and reverses the order of the cities between them. The second method is the swapping place method. The code generates two random numbers that locate two cities and swap positions with each other. The reverse segment is used 87.5% of the time, and the swap place method is used the rest of the time. This was done by trial and error, of manually changing the percentages and seeing how the improvement percentage changes. The metropolis criterion is then used to accept or reject the new route, which depends on whether the distance shortens or the probability is accepted, even though sometimes the distance does not shorten. Afterwards, the temperature is reduced exponentially by alpha, which, depending on the number of cities, varies to produce an efficient code. For the 150 cities, I found that alpha was best set at 0.9995, and for 1k cities, alpha was best at 0.9999. The iterations were then set to 100 for 150 cities and to 25 for 1k cities. These iterations provided a more reasonable run time for each data set. The T inital was also chosen depending on the # of cities, and for 150 T_init=10000 and for 1k T_init=20000, which allowed for the code to cool down longer for bigger data sets.
