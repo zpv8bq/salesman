@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
+from numba import jit
 from datareader import get_data
 
 def cities_to_array(cities):
@@ -11,6 +12,7 @@ def cities_to_array(cities):
         coords[i] = [c.lon, c.lat]
     return coords
 
+@jit(nopython=True)
 def haversine_distance(coords):
     R = 6371.0
     coords_rad = np.radians(coords)
@@ -28,6 +30,7 @@ def haversine_distance(coords):
         dist_matrix[i] = R * c
     return dist_matrix
 
+@jit(nopython=True)
 def total_distance(route, dist_matrix):
     dist = 0.0
     for i in range(len(route)):
@@ -47,15 +50,37 @@ def swap_cities(route):
     new_route[i], new_route[j] = new_route[j], new_route[i]
     return new_route
 
-def simulated_annealing(cities, T_init=100000, T_min=0.05, alpha=0.9995, max_iter_per_temp=100):
+def initial_temp(cities, dist_matrix, n_samples=100):
+    n_cities = len(cities)
+    route = np.random.permutation(n_cities)
+    deltas = []
+    for _ in range(n_samples):
+        if np.random.random() < 0.5:
+            new_route = reverse_segment(route)
+        else:
+            new_route = swap_cities(route)
+        old_dist = total_distance(route, dist_matrix)
+        new_dist = total_distance(new_route, dist_matrix)
+        delta = abs(new_dist - old_dist)
+        deltas.append(delta)
+        route = new_route
+    max_delta = np.max(deltas)
+    T_init = 2 * max_delta
+    return T_init
+
+def simulated_annealing(cities, T_init=None, T_min=0.05, alpha=0.9995, max_iter_per_temp=100):
     n_cities = len(cities)
     coords = cities_to_array(cities)
-    dist_matrix = haversine_distance(coords)  
+    dist_matrix = haversine_distance(coords)
+    if T_init is None:
+        T_init = initial_temp(cities, dist_matrix)
+    print("T_init = ", T_init)
     current_route = np.random.permutation(n_cities)
     current_dist = total_distance(current_route, dist_matrix)
     best_route = current_route.copy()
     best_dist = current_dist
     initial_dist = current_dist
+    
     T = T_init
     history = []
   
@@ -107,11 +132,11 @@ def main():
     n_cities = len(cities)
     print(f"Loaded {n_cities} cities\n")
     if n_cities < 50:
-        T_init, alpha, max_iter = 5000, 0.995, 100
+        T_init, alpha, max_iter = None, 0.995, 100
     elif n_cities < 200:
-        T_init, alpha, max_iter = 10000, 0.9995, 100
+        T_init, alpha, max_iter = None, 0.9998, 75
     else:
-        T_init, alpha, max_iter = 20000, 0.9999, 25
+        T_init, alpha, max_iter = None, 0.9999, 50
 
     start_time = time.time()
     best_route, best_dist, initial_dist, history = simulated_annealing(cities,T_init, 0.05,alpha,max_iter)
